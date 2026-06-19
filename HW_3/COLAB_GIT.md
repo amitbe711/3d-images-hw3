@@ -104,6 +104,42 @@ If you only need **SDS/PDS**, skip the CLIP line entirely.
 
 ---
 
+## Hugging Face: `401` / `Repository Not Found` for `stabilityai/stable-diffusion-2-1-base`
+
+The weights are downloaded from the **Hugging Face Hub** on first run. A **`401 Unauthorized`** with **`Invalid username or password`** almost always means:
+
+1. **A bad token is in the environment** (common in Colab: **Secrets** → `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` saved wrong, expired, or copied with a typo). The Hub then rejects every request, and diffusers reports **Repository Not Found** even though the repo exists.
+
+2. **Gated model:** log in with an account that has accepted the model terms on the model page.
+
+**Fix (pick one path):**
+
+**A — Use a valid token (recommended)**  
+1. Open [stabilityai/stable-diffusion-2-1-base](https://huggingface.co/stabilityai/stable-diffusion-2-1-base), sign in, and **accept** the license if prompted.  
+2. Create a **read** token: [Settings → Access Tokens](https://huggingface.co/settings/tokens).  
+3. In Colab, either set the secret **`HF_TOKEN`** to that token, **or** run once per session:
+
+```python
+from huggingface_hub import login
+from getpass import getpass
+login(token=getpass("Paste HF read token: "))
+```
+
+**B — No token / anonymous only**  
+If you are **not** using a token on purpose, remove a **broken** one so the Hub stops sending bad credentials:
+
+```python
+import os
+for k in ("HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"):
+    if k in os.environ:
+        del os.environ[k]
+        print("Cleared", k)
+```
+
+Then **restart the runtime** and run `main.py` again (anonymous download works only where the model is public and rate limits allow).
+
+---
+
 ## Step 4 — Smoke test (SDS)
 
 ```python
