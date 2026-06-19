@@ -66,7 +66,7 @@ Private repo: use a [fine-grained PAT](https://github.com/settings/tokens) as th
 
 Colab already includes **PyTorch**. Do **not** use the course **`requirements.txt`** there ( **`triton` / `xformer`** and old pins break Colab).
 
-**`requirements-colab.txt`** uses **`diffusers>=0.31`** so it works with **modern `huggingface-hub`** (same range as **gradio**, **peft**, **datasets** on Colab). Older **`diffusers==0.19.3` + `hub<0.20`** avoids `cached_download` removal but **downgrades hub** and triggers the resolver **conflicts** you saw.
+**`requirements-colab.txt`** uses **`diffusers>=0.31`**, **`huggingface-hub>=0.33`**, and **`accelerate>=0.32`** so imports match Colab’s **gradio / peft / datasets** stack. (`peft` imports **`clear_device_cache`** from **`accelerate.utils.memory`**, which only exists from **accelerate 0.32** upward; an older **accelerate** triggers the traceback you saw.) Older **`diffusers==0.19.3` + `hub<0.20`** avoids `cached_download` removal but **downgrades hub** and triggers resolver **conflicts** with those Colab packages.
 
 ```python
 import json, pathlib
@@ -89,6 +89,8 @@ print("Patched:", p)
 # !pip install -q jedi
 
 !pip install -q -r requirements-colab.txt
+# Ensure accelerate is new enough for Colab's preinstalled peft (clear_device_cache).
+!pip install -q "accelerate>=0.32,<1"
 
 # OpenAI CLIP — only for eval.py on Colab. Skip if you run eval on your laptop.
 # !pip install -q git+https://github.com/openai/CLIP.git

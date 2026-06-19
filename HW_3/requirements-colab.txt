@@ -7,7 +7,8 @@
 
 diffusers>=0.31.0,<0.32.0
 transformers>=4.41.0,<4.46.0
-accelerate>=0.25.0
+# Colab ships peft that imports accelerate.utils.memory.clear_device_cache (added in 0.32.0).
+accelerate>=0.32.0,<1.0.0
 huggingface-hub>=0.33.5,<1.0.0
 einops==0.7.0
 ftfy==6.2.3
