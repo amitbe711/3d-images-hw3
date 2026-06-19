@@ -1,14 +1,15 @@
-# Minimal deps for HW3 on Google Colab.
+# Minimal deps for HW3 on Google Colab (and local CPU smoke tests).
 #
-# Colab uses Python 3.12. Old pins (transformers==4.28.1 + tokenizers==0.13.3) pull
-# tokenizers without a cp312 wheel → Rust compile → "Getting requirements to build wheel".
-# Newer transformers brings tokenizers>=0.15 with binary wheels. diffusers 0.19.3 only
-# requires transformers for the [torch] extra at runtime; 4.36+ works with SD2.1 pipelines.
+# - Do NOT use course requirements.txt on Colab (triton / xformer break builds).
+# - Colab Python 3.12: transformers 4.28 + tokenizers 0.13 often compile from source;
+#   use transformers>=4.36 so tokenizers installs from wheels.
+# - diffusers 0.19.3 imports huggingface_hub.cached_download; that symbol was removed
+#   in newer hubs, so keep huggingface-hub<0.20 (0.19.4 is a known-good pin).
 
 diffusers==0.19.3
-transformers>=4.36.0,<4.46.0
-accelerate>=0.25.0
-huggingface-hub>=0.19.0,<1.0
+transformers>=4.36.2,<4.40.0
+accelerate>=0.25.0,<0.28.0
+huggingface-hub>=0.16.4,<0.20.0
 einops==0.7.0
 ftfy==6.2.3
 safetensors>=0.3.1

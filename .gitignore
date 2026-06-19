@@ -9,6 +9,7 @@ dist/
 build/
 
 # Virtual environments (do not commit)
+HW_3/.venv_hw3_test/
 venv/
 venv313/
 venv-pyenv-3.10-broken/

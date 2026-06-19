@@ -85,7 +85,7 @@ print("Patched:", p)
 !pip install -q git+https://github.com/openai/CLIP.git
 ```
 
-If pip fails with **Getting requirements to build wheel**, scroll **up** in the cell output: the failing package is usually **`tokenizers`** when Colab is on **Python 3.12** and an old **`transformers` / `tokenizers`** pin forces a Rust build. The repo’s **`requirements-colab.txt`** avoids that by using **`transformers>=4.36`** (binary wheels). Do **not** run the course **`requirements.txt`** on Colab unless you use a Python 3.10/3.11 environment.
+If pip fails with **Getting requirements to build wheel**, scroll **up** in the cell output: the failing package is often **`tokenizers`** on **Python 3.12** when an old **`transformers` / `tokenizers`** pin forces a Rust build. This file uses **`transformers>=4.36`** so **`tokenizers` installs from wheels**. It also caps **`huggingface-hub<0.20`**: **`diffusers==0.19.3` still imports `cached_download`**, which newer hubs removed (would cause `ImportError` even after pip succeeds). Do **not** run the course **`requirements.txt`** on Colab unless you use Python 3.10/3.11 and accept **`triton`/`xformer`** build risk.
 
 If **CLIP** still fails on a very new Colab Python, scroll up in the log for the **first** `error:` block (often `sentencepiece` or `clip` `setup.py`). Try:
 
@@ -132,3 +132,22 @@ git push
 ```
 
 Do not commit large generated PNG batches unless you really want them in Git history.
+
+---
+
+## Local smoke test (optional, before Colab)
+
+From `HW_3/` with Python 3.10+ (Colab uses 3.12; both work with `requirements-colab.txt`):
+
+```bash
+cd HW_3
+python3 -m venv .venv_hw3_test
+source .venv_hw3_test/bin/activate   # Windows: .venv_hw3_test\Scripts\activate
+pip install -U pip setuptools wheel
+pip install torch torchvision
+pip install -r requirements-colab.txt
+python -m py_compile guidance/sd.py main.py eval.py utils.py
+python -c "import diffusers, transformers; import guidance.sd; print('OK', diffusers.__version__)"
+```
+
+This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run still pulls **`stabilityai/stable-diffusion-2-1-base`** from Hugging Face (~several GB).
