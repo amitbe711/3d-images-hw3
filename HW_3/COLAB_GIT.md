@@ -104,39 +104,52 @@ If you only need **SDS/PDS**, skip the CLIP line entirely.
 
 ---
 
-## Hugging Face: `401` / `Repository Not Found` for `stabilityai/stable-diffusion-2-1-base`
+## Hugging Face: `401` / `Repository Not Found` / **404 on the model page**
 
-The weights are downloaded from the **Hugging Face Hub** on first run. A **`401 Unauthorized`** with **`Invalid username or password`** almost always means:
+The weights are downloaded from the **Hugging Face Hub** on first run.
 
-1. **A bad token is in the environment** (common in Colab: **Secrets** → `HF_TOKEN` / `HUGGING_FACE_HUB_TOKEN` saved wrong, expired, or copied with a typo). The Hub then rejects every request, and diffusers reports **Repository Not Found** even though the repo exists.
+### `401` / *Invalid username or password*
 
-2. **Gated model:** log in with an account that has accepted the model terms on the model page.
+1. **A bad token is in the environment** (Colab **Secrets** → `HF_TOKEN` typo, expired token, or **Notebook access** turned off). The Hub may respond with **Repository Not Found** even when the repo exists.
 
-**Fix (pick one path):**
+2. **Gated model:** log in and accept the license on the model page (if the repo is visible to you).
 
-**A — Use a valid token (recommended)**  
-1. Open [stabilityai/stable-diffusion-2-1-base](https://huggingface.co/stabilityai/stable-diffusion-2-1-base), sign in, and **accept** the license if prompted.  
-2. Create a **read** token: [Settings → Access Tokens](https://huggingface.co/settings/tokens).  
-3. In Colab, either set the secret **`HF_TOKEN`** to that token, **or** run once per session:
+**Fix for `401`:** use a valid **Read** token, secret name exactly **`HF_TOKEN`**, **Notebook access** ON for this notebook, and accept the license if the model page loads. Optional one-shot login:
 
 ```python
 from huggingface_hub import login
 from getpass import getpass
-login(token=getpass("Paste HF read token: "))
+login(token=getpass("HF read token: "))
 ```
 
-**B — No token / anonymous only**  
-If you are **not** using a token on purpose, remove a **broken** one so the Hub stops sending bad credentials:
+If a **broken** token is set, clear it and restart the runtime:
 
 ```python
 import os
 for k in ("HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"):
-    if k in os.environ:
-        del os.environ[k]
-        print("Cleared", k)
+    os.environ.pop(k, None)
 ```
 
-Then **restart the runtime** and run `main.py` again (anonymous download works only where the model is public and rate limits allow).
+### **404** on `https://huggingface.co/stabilityai/stable-diffusion-2-1-base`
+
+Some accounts or regions report that the **Stability AI** repo page returns **404** (or the org made access stricter). Your code no longer depends only on that id: by default it loads a **public community mirror** with the same **SD 2.1 base** diffusers layout:
+
+- Default: **`sd2-community/stable-diffusion-2-1-base`**
+
+To force the original id (if it works for you):
+
+```python
+import os
+os.environ["SD_MODEL_ID"] = "stabilityai/stable-diffusion-2-1-base"
+```
+
+Or in Colab before `main.py`:
+
+```text
+!SD_MODEL_ID=stabilityai/stable-diffusion-2-1-base python main.py ...
+```
+
+Other mirrors people use: **`Manojb/stable-diffusion-2-1-base`** (set `SD_MODEL_ID` the same way). Prefer mirrors that expose the full **diffusers** file tree (`model_index.json`, `scheduler/`, etc.).
 
 ---
 
@@ -192,6 +205,6 @@ python -m py_compile guidance/sd.py main.py eval.py utils.py
 python -c "import diffusers, transformers; import guidance.sd; print('OK', diffusers.__version__)"
 ```
 
-This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run still pulls **`stabilityai/stable-diffusion-2-1-base`** from Hugging Face (~several GB).
+This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run downloads the **default Hub repo** (see `SD_MODEL_ID` / `sd.py`; often **several GB**).
 
 **Note:** `requirements-colab.txt` uses **newer diffusers** than the course `requirements.txt` so it fits Colab’s preinstalled stack. If the grader uses a **strict** pinned conda env, confirm with staff; behavior of SDS/PDS on SD2.1 should match.

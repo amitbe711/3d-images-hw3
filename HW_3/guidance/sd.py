@@ -1,5 +1,6 @@
 from diffusers import DDIMScheduler, StableDiffusionPipeline
 
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -13,7 +14,14 @@ class StableDiffusion(nn.Module):
         self.dtype = args.precision
         print(f'[INFO] loading stable diffusion...')
 
-        model_key = "stabilityai/stable-diffusion-2-1-base"
+        # Official stabilityai/stable-diffusion-2-1-base is sometimes 404 or gated.
+        # Default: public mirror with same SD2.1-base diffusers layout.
+        # Override: export SD_MODEL_ID=stabilityai/stable-diffusion-2-1-base
+        model_key = os.environ.get(
+            "SD_MODEL_ID",
+            "sd2-community/stable-diffusion-2-1-base",
+        )
+        print(f"[INFO] HF model id: {model_key}")
         pipe = StableDiffusionPipeline.from_pretrained(
             model_key, torch_dtype=self.dtype,
         )
