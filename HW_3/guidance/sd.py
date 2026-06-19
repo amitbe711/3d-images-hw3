@@ -34,6 +34,7 @@ class StableDiffusion(nn.Module):
         self.min_step = int(self.num_train_timesteps * t_range[0])
         self.max_step = int(self.num_train_timesteps * t_range[1])
         self.alphas = self.scheduler.alphas_cumprod.to(self.device) # for convenience
+        self.betas = self.scheduler.betas.to(self.device)  # PDS indexes with CUDA timesteps
 
         print(f'[INFO] loaded stable diffusion!')
 
@@ -103,7 +104,7 @@ class StableDiffusion(nn.Module):
         )
         t_prev = t - 1
 
-        beta_t = self.scheduler.betas[t].to(self.device)
+        beta_t = self.betas[t]
         alpha_bar_t = self.alphas[t]
         alpha_bar_t_prev = self.alphas[t_prev]
         sigma_t = ((1 - alpha_bar_t_prev) / (1 - alpha_bar_t) * beta_t).sqrt()
