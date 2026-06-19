@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.Python
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# Virtual environments (do not commit)
+venv/
+venv313/
+venv-pyenv-3.10-broken/
+HW_1/venv/
+
+# IDE / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Tests / caches
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.coverage
+htmlcov/
+
+# HW3: generated outputs and large downloads (keep repo light)
+HW_3/outputs/
+HW_3/**/.hydra/
+
+# HW2: local training / hydra outputs
+HW_2/problem3/outputs/
+HW_2/**/.hydra/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets
+.env
+*.pem
+
+# Archives (submission zips are local artifacts)
+*.zip
