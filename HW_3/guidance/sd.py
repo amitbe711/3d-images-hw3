@@ -64,7 +64,6 @@ class StableDiffusion(nn.Module):
         guidance_scale=100, 
         grad_scale=1,
     ):
-        # Sample a random timestep for each item in the batch.
         t = torch.randint(
             self.min_step,
             self.max_step + 1,
@@ -73,8 +72,6 @@ class StableDiffusion(nn.Module):
             device=self.device,
         )
 
-        # Add noise to the latent (DDIM Eq. 4) and predict it with the (CFG) UNet.
-        # The diffusion model is frozen, so no gradients flow through it.
         with torch.no_grad():
             noise = torch.randn_like(latents)
             latents_noisy = self.scheduler.add_noise(latents, noise, t)
@@ -82,13 +79,10 @@ class StableDiffusion(nn.Module):
                 latents_noisy, t, text_embeddings, guidance_scale
             )
 
-        # SDS gradient: w(t) * (eps_theta(x^t, c, t) - eps), with w(t) = 1 - alpha_bar_t.
         w = (1 - self.alphas[t]).view(-1, 1, 1, 1)
         grad = grad_scale * w * (noise_pred - noise)
         grad = torch.nan_to_num(grad)
 
-        # Wrap the gradient into a differentiable loss so that
-        # d(loss)/d(latents) == grad.
         target = (latents - grad).detach()
         loss = 0.5 * F.mse_loss(latents, target, reduction="sum") / latents.shape[0]
         return loss
@@ -100,7 +94,6 @@ class StableDiffusion(nn.Module):
         guidance_scale=7.5, 
         grad_scale=1,
     ):
-        # Sample a timestep t (and its predecessor t-1). Keep t >= 1 so t_prev >= 0.
         t = torch.randint(
             max(self.min_step, 1),
             self.max_step + 1,
@@ -110,18 +103,15 @@ class StableDiffusion(nn.Module):
         )
         t_prev = t - 1
 
-        # DDPM posterior coefficients for this timestep.
         beta_t = self.scheduler.betas[t].to(self.device)
         alpha_bar_t = self.alphas[t]
         alpha_bar_t_prev = self.alphas[t_prev]
         sigma_t = ((1 - alpha_bar_t_prev) / (1 - alpha_bar_t) * beta_t).sqrt()
 
-        # The source and target must share the SAME noises eps^t and eps^{t-1}.
         noise_t = torch.randn_like(tgt_latents)
         noise_t_prev = torch.randn_like(tgt_latents)
 
         def stochastic_latent(latents, text_embedding):
-            # x^t and x^{t-1} obtained from x^0 with the shared noises.
             latents_noisy = self.scheduler.add_noise(latents, noise_t, t)
             latents_noisy_prev = self.scheduler.add_noise(latents, noise_t_prev, t_prev)
 
@@ -130,23 +120,18 @@ class StableDiffusion(nn.Module):
                     latents_noisy, t, text_embedding, guidance_scale
                 )
 
-            # Predicted x^0 from the noisy latent and predicted noise.
             x0_pred = (latents_noisy - (1 - alpha_bar_t).sqrt() * noise_pred) / alpha_bar_t.sqrt()
-
-            # Posterior mean mu(x^t, c, eps_theta).
             mu = (
                 alpha_bar_t_prev.sqrt() * beta_t / (1 - alpha_bar_t)
             ) * x0_pred + (
                 (1 - beta_t).sqrt() * (1 - alpha_bar_t_prev) / (1 - alpha_bar_t)
             ) * latents_noisy
 
-            # Stochastic latent z_tilde^t = (x^{t-1} - mu) / sigma_t.
             return (latents_noisy_prev - mu) / sigma_t
 
         zt_tgt = stochastic_latent(tgt_latents, tgt_text_embedding)
         zt_src = stochastic_latent(src_latents, src_text_embedding)
 
-        # PDS gradient matches the source/target stochastic latents.
         grad = grad_scale * (zt_tgt - zt_src)
         grad = torch.nan_to_num(grad)
 
