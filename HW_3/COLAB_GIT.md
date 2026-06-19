@@ -64,7 +64,9 @@ Private repo: use a [fine-grained PAT](https://github.com/settings/tokens) as th
 
 ## Step 3 — Install and fix image paths
 
-Colab already includes **PyTorch**. The course `requirements.txt` pins **`triton`** and **`xformer`**, which often break pip with **Getting requirements to build wheel**. Use the Colab file instead, then install **CLIP** in a second step (for `eval.py` only).
+Colab already includes **PyTorch**. Do **not** use the course **`requirements.txt`** there ( **`triton` / `xformer`** and old pins break Colab).
+
+**`requirements-colab.txt`** uses **`diffusers>=0.31`** so it works with **modern `huggingface-hub`** (same range as **gradio**, **peft**, **datasets** on Colab). Older **`diffusers==0.19.3` + `hub<0.20`** avoids `cached_download` removal but **downgrades hub** and triggers the resolver **conflicts** you saw.
 
 ```python
 import json, pathlib
@@ -77,24 +79,26 @@ for v in data.values():
 p.write_text(json.dumps(data, indent=4))
 print("Patched:", p)
 
-# HW3 main.py / SDS / PDS (no triton / xformer)
-!pip install -q -U pip setuptools wheel
+%cd /content/hw3-course/HW_3
+
+# Colab torch 2.11 warns if setuptools is too new; keep below 82.
+!pip install -q -U pip wheel
+!pip install -q "setuptools>=70,<82"
+
+# Optional: silences "ipython requires jedi" (harmless if skipped).
+# !pip install -q jedi
+
 !pip install -q -r requirements-colab.txt
 
-# OpenAI CLIP — only needed for eval.py; second line avoids dragging triton from full requirements
-!pip install -q git+https://github.com/openai/CLIP.git
+# OpenAI CLIP — only for eval.py on Colab. Skip if you run eval on your laptop.
+# !pip install -q git+https://github.com/openai/CLIP.git
 ```
 
-If pip fails with **Getting requirements to build wheel**, scroll **up** in the cell output: the failing package is often **`tokenizers`** on **Python 3.12** when an old **`transformers` / `tokenizers`** pin forces a Rust build. This file uses **`transformers>=4.36`** so **`tokenizers` installs from wheels**. It also caps **`huggingface-hub<0.20`**: **`diffusers==0.19.3` still imports `cached_download`**, which newer hubs removed (would cause `ImportError` even after pip succeeds). Do **not** run the course **`requirements.txt`** on Colab unless you use Python 3.10/3.11 and accept **`triton`/`xformer`** build risk.
+**About the long `ERROR: pip's dependency resolver...` block:** if the cell **finishes** and `pip` **exit code is 0**, those lines are often **warnings** about packages pip did not reconcile globally. After **`requirements-colab.txt`** matches Colab’s hub/transformers range, most **gradio / peft / datasets** conflicts should **disappear**. If anything still breaks at **import** or **runtime**, use **Runtime → Restart session** and run **only** this notebook’s cells (or use a **fresh** Colab notebook without extra `pip install` stacks).
 
-If **CLIP** still fails on a very new Colab Python, scroll up in the log for the **first** `error:` block (often `sentencepiece` or `clip` `setup.py`). Try:
+If **CLIP** fails, scroll up for the first `error:` line. You can skip CLIP on Colab and run **`eval.py`** locally.
 
-```text
-!pip install -q "setuptools>=64" "packaging>=23"
-!pip install -q git+https://github.com/openai/CLIP.git
-```
-
-If you only need to **run SDS/PDS** and will run **`eval.py` on your laptop**, you can skip the CLIP line entirely.
+If you only need **SDS/PDS**, skip the CLIP line entirely.
 
 ---
 
@@ -151,3 +155,5 @@ python -c "import diffusers, transformers; import guidance.sd; print('OK', diffu
 ```
 
 This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run still pulls **`stabilityai/stable-diffusion-2-1-base`** from Hugging Face (~several GB).
+
+**Note:** `requirements-colab.txt` uses **newer diffusers** than the course `requirements.txt` so it fits Colab’s preinstalled stack. If the grader uses a **strict** pinned conda env, confirm with staff; behavior of SDS/PDS on SD2.1 should match.

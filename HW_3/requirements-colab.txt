@@ -1,15 +1,14 @@
-# Minimal deps for HW3 on Google Colab (and local CPU smoke tests).
+# HW3 on Google Colab — works alongside preinstalled Colab packages (gradio,
+# datasets, peft, sentence-transformers) which need huggingface-hub>=0.33 and
+# recent transformers.
 #
-# - Do NOT use course requirements.txt on Colab (triton / xformer break builds).
-# - Colab Python 3.12: transformers 4.28 + tokenizers 0.13 often compile from source;
-#   use transformers>=4.36 so tokenizers installs from wheels.
-# - diffusers 0.19.3 imports huggingface_hub.cached_download; that symbol was removed
-#   in newer hubs, so keep huggingface-hub<0.20 (0.19.4 is a known-good pin).
+# diffusers 0.19.3 pins huggingface-hub<0.20 (cached_download); that breaks those
+# tools. diffusers>=0.31 removes cached_download and matches modern hub.
 
-diffusers==0.19.3
-transformers>=4.36.2,<4.40.0
-accelerate>=0.25.0,<0.28.0
-huggingface-hub>=0.16.4,<0.20.0
+diffusers>=0.31.0,<0.32.0
+transformers>=4.41.0,<4.46.0
+accelerate>=0.25.0
+huggingface-hub>=0.33.5,<1.0.0
 einops==0.7.0
 ftfy==6.2.3
 safetensors>=0.3.1
