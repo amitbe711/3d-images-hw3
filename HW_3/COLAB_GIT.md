@@ -85,6 +85,8 @@ print("Patched:", p)
 !pip install -q git+https://github.com/openai/CLIP.git
 ```
 
+If pip fails with **Getting requirements to build wheel**, scroll **up** in the cell output: the failing package is usually **`tokenizers`** when Colab is on **Python 3.12** and an old **`transformers` / `tokenizers`** pin forces a Rust build. The repo’s **`requirements-colab.txt`** avoids that by using **`transformers>=4.36`** (binary wheels). Do **not** run the course **`requirements.txt`** on Colab unless you use a Python 3.10/3.11 environment.
+
 If **CLIP** still fails on a very new Colab Python, scroll up in the log for the **first** `error:` block (often `sentencepiece` or `clip` `setup.py`). Try:
 
 ```text
