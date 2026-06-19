@@ -1,8 +1,13 @@
 from diffusers import DDIMScheduler, StableDiffusionPipeline
 
+import os
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+# Course Hub id (often 404 / gated for some accounts). Mirror matches SD2.1-base layout.
+_HF_SD21_OFFICIAL = "stabilityai/stable-diffusion-2-1-base"
+_HF_SD21_MIRROR = "sd2-community/stable-diffusion-2-1-base"
 
 
 class StableDiffusion(nn.Module):
@@ -13,10 +18,30 @@ class StableDiffusion(nn.Module):
         self.dtype = args.precision
         print(f'[INFO] loading stable diffusion...')
 
-        model_key = "stabilityai/stable-diffusion-2-1-base"
-        pipe = StableDiffusionPipeline.from_pretrained(
-            model_key, torch_dtype=self.dtype,
-        )
+        # --sd_model_id (main.py) > SD_MODEL_ID env > public mirror.
+        cli_id = getattr(args, "sd_model_id", None)
+        if cli_id is not None and str(cli_id).strip() != "":
+            model_key = str(cli_id).strip()
+        else:
+            model_key = os.environ.get("SD_MODEL_ID", _HF_SD21_MIRROR).strip()
+        print(f"[INFO] HF model id: {model_key}")
+        try:
+            pipe = StableDiffusionPipeline.from_pretrained(
+                model_key, torch_dtype=self.dtype,
+            )
+        except OSError:
+            if model_key == _HF_SD21_OFFICIAL:
+                model_key = _HF_SD21_MIRROR
+                print(
+                    f"[WARN] Could not load {_HF_SD21_OFFICIAL} from Hub; "
+                    f"retrying mirror {model_key}."
+                )
+                print(f"[INFO] HF model id: {model_key}")
+                pipe = StableDiffusionPipeline.from_pretrained(
+                    model_key, torch_dtype=self.dtype,
+                )
+            else:
+                raise
 
         pipe.to(self.device)
         self.vae = pipe.vae

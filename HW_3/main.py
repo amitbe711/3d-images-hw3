@@ -1,9 +1,16 @@
-import os 
+import os
+import sys
+from pathlib import Path
+
+# Public SD2.1-base mirror (same diffusers layout). Course Hub id often 404s on Colab.
+_DEFAULT_HF_SD21 = "sd2-community/stable-diffusion-2-1-base"
+os.environ.setdefault("SD_MODEL_ID", _DEFAULT_HF_SD21)
+
 import json
-from PIL import Image 
-import numpy as np 
+from PIL import Image
+import numpy as np
 from tqdm import tqdm
-import math 
+import math
 import argparse
 
 import torch
@@ -11,8 +18,32 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch.optim.lr_scheduler import LambdaLR
 
-from guidance.sd import StableDiffusion
 from utils import *
+
+
+def _patch_stale_sd_py_for_hub():
+    """Stale clones hardcode stabilityai/...; fix on disk once, then import fresh."""
+    root = Path(__file__).resolve().parent
+    p = root / "guidance" / "sd.py"
+    try:
+        text = p.read_text()
+    except OSError:
+        return
+    if "stabilityai/stable-diffusion-2-1-base" not in text:
+        return
+    if "_HF_SD21_MIRROR" in text:
+        return
+    new = text.replace(
+        "stabilityai/stable-diffusion-2-1-base",
+        "sd2-community/stable-diffusion-2-1-base",
+    )
+    if new == text:
+        return
+    p.write_text(new)
+    print(
+        "[WARN] Patched guidance/sd.py: replaced hardcoded stabilityai/... Hub id with "
+        "sd2-community/... (404 fix). Prefer: git pull for the full upstream file."
+    )
 
 
 def seed_everything(seed=2024):
@@ -36,8 +67,12 @@ def get_cosine_schedule_with_warmup(optimizer, num_warmup_steps, num_training_st
 
 
 def init_model(args):
-    model = StableDiffusion(args, t_range=[0.02, 0.98])
-    return model
+    _patch_stale_sd_py_for_hub()
+    if "guidance.sd" in sys.modules:
+        del sys.modules["guidance.sd"]
+    from guidance.sd import StableDiffusion
+
+    return StableDiffusion(args, t_range=[0.02, 0.98])
     
     
 def run(args):
@@ -147,7 +182,14 @@ def parse_args():
     
     parser.add_argument("--log_step", type=int, default=25)
     parser.add_argument("--precision", type=str, default="fp32")
-    
+
+    parser.add_argument(
+        "--sd_model_id",
+        type=str,
+        default=os.environ.get("SD_MODEL_ID", _DEFAULT_HF_SD21),
+        help="Hugging Face repo id for Stable Diffusion 2.1 base (default: public mirror).",
+    )
+
     return parser.parse_args()
 
     

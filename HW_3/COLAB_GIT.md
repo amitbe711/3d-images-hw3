@@ -56,7 +56,26 @@ assert os.path.isdir(HW3), f"Clone OK but HW_3 not found at {HW3}. Is HW_3 at re
 !ls -la
 ```
 
-Private repo: use a [fine-grained PAT](https://github.com/settings/tokens) as the password when `git` prompts, or embed **only for the session** (avoid saving in the notebook):
+### Hugging Face model id (`SD_MODEL_ID`)
+
+**Leave `SD_MODEL_ID` unset on Colab** unless you need to override. `guidance/sd.py` defaults to **`sd2-community/stable-diffusion-2-1-base`**. If you still see **`stabilityai/stable-diffusion-2-1-base`** in errors, your copy is stale: run **`git pull`** in the clone (or re-clone), then **Runtime → Restart session** and rerun from the clone step.
+
+**Bootstrap without `git pull`:** current `main.py` sets a safe default Hub id, adds **`--sd_model_id`**, and may patch stale `guidance/sd.py`. **`guidance/__init__.py`** does the same patch **before** `sd.py` is imported, so it still runs if your Colab notebook never picked up the newer `main.py` (as long as you **`git pull`** once to get `__init__.py` on disk).
+
+**Do not** set `SD_MODEL_ID` to `stabilityai/...` in a notebook cell when that repo returns **404** for you — that forces the failing id. (If a cell already set it, `os.environ.pop("SD_MODEL_ID", None)` and restart the runtime.)
+
+If your **grader or machine** can reach the official repo and you want that id explicitly:
+
+```python
+import os
+os.environ["SD_MODEL_ID"] = "stabilityai/stable-diffusion-2-1-base"
+```
+
+Set this **before** any `import guidance.sd` or `python main.py` in that process.
+
+---
+
+### Private GitHub clone (optional)
 
 `REPO_URL = f"https://YOUR_TOKEN@github.com/{GITHUB_USER}/{REPO_NAME}.git"`
 
@@ -132,11 +151,9 @@ for k in ("HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"):
 
 ### **404** on `https://huggingface.co/stabilityai/stable-diffusion-2-1-base`
 
-The assignment code is still **`stabilityai/stable-diffusion-2-1-base`** (do not change the **`TODO`** / starter pipeline unless your instructor allows it).
+The course **README** may still name **`stabilityai/stable-diffusion-2-1-base`**. This repo’s **`guidance/sd.py`** defaults to **`sd2-community/stable-diffusion-2-1-base`** so Colab can download without that org page. To match the original Hub id when it works for you, set **`SD_MODEL_ID`** (see the cell above Step 3).
 
-If the **website** shows **404** while **logged out**, try **logging in** to Hugging Face and opening the link again (some org pages behave differently when gated). Also try another network or browser, or ask the **course staff**—the repo may be visibility-restricted for some accounts or regions.
-
-Community mirrors (e.g. **`sd2-community/stable-diffusion-2-1-base`**, **`Manojb/stable-diffusion-2-1-base`**) exist on the Hub for the same weights, but switching to them **would require editing `guidance/sd.py`**, which may violate the homework “only edit `TODO`” rule—get approval before doing that.
+If the **stabilityai** page shows **404**, try logging in, another network, or ask **course staff** about access. You can also set **`SD_MODEL_ID`** to another public mirror with the same diffusers layout (e.g. **`Manojb/stable-diffusion-2-1-base`**). Confirm with your **TA** if they require the exact **`stabilityai/...`** id for grading.
 
 ---
 
@@ -192,6 +209,6 @@ python -m py_compile guidance/sd.py main.py eval.py utils.py
 python -c "import diffusers, transformers; import guidance.sd; print('OK', diffusers.__version__)"
 ```
 
-This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run pulls **`stabilityai/stable-diffusion-2-1-base`** from Hugging Face (~several GB) per the starter code.
+This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run pulls the configured Hub id (default **`sd2-community/stable-diffusion-2-1-base`**, or **`SD_MODEL_ID`** if set) from Hugging Face (~several GB).
 
 **Note:** `requirements-colab.txt` uses **newer diffusers** than the course `requirements.txt` so it fits Colab’s preinstalled stack. If the grader uses a **strict** pinned conda env, confirm with staff; behavior of SDS/PDS on SD2.1 should match.
