@@ -132,24 +132,11 @@ for k in ("HF_TOKEN", "HUGGING_FACE_HUB_TOKEN"):
 
 ### **404** on `https://huggingface.co/stabilityai/stable-diffusion-2-1-base`
 
-Some accounts or regions report that the **Stability AI** repo page returns **404** (or the org made access stricter). Your code no longer depends only on that id: by default it loads a **public community mirror** with the same **SD 2.1 base** diffusers layout:
+The assignment code is still **`stabilityai/stable-diffusion-2-1-base`** (do not change the **`TODO`** / starter pipeline unless your instructor allows it).
 
-- Default: **`sd2-community/stable-diffusion-2-1-base`**
+If the **website** shows **404** while **logged out**, try **logging in** to Hugging Face and opening the link again (some org pages behave differently when gated). Also try another network or browser, or ask the **course staff**—the repo may be visibility-restricted for some accounts or regions.
 
-To force the original id (if it works for you):
-
-```python
-import os
-os.environ["SD_MODEL_ID"] = "stabilityai/stable-diffusion-2-1-base"
-```
-
-Or in Colab before `main.py`:
-
-```text
-!SD_MODEL_ID=stabilityai/stable-diffusion-2-1-base python main.py ...
-```
-
-Other mirrors people use: **`Manojb/stable-diffusion-2-1-base`** (set `SD_MODEL_ID` the same way). Prefer mirrors that expose the full **diffusers** file tree (`model_index.json`, `scheduler/`, etc.).
+Community mirrors (e.g. **`sd2-community/stable-diffusion-2-1-base`**, **`Manojb/stable-diffusion-2-1-base`**) exist on the Hub for the same weights, but switching to them **would require editing `guidance/sd.py`**, which may violate the homework “only edit `TODO`” rule—get approval before doing that.
 
 ---
 
@@ -205,6 +192,6 @@ python -m py_compile guidance/sd.py main.py eval.py utils.py
 python -c "import diffusers, transformers; import guidance.sd; print('OK', diffusers.__version__)"
 ```
 
-This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run downloads the **default Hub repo** (see `SD_MODEL_ID` / `sd.py`; often **several GB**).
+This does **not** download Stable Diffusion weights (no GPU minutes). A full `python main.py ...` run pulls **`stabilityai/stable-diffusion-2-1-base`** from Hugging Face (~several GB) per the starter code.
 
 **Note:** `requirements-colab.txt` uses **newer diffusers** than the course `requirements.txt` so it fits Colab’s preinstalled stack. If the grader uses a **strict** pinned conda env, confirm with staff; behavior of SDS/PDS on SD2.1 should match.
